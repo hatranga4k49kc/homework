@@ -1,0 +1,56 @@
+version: '3'
+networks:
+  webphp:
+    driver: bridge
+volumes:
+  mysql-database:
+    driver: local
+services:
+  
+  #PHP Service
+  php:
+    build:
+      args:
+        user: root
+      context: ./docker/php
+      dockerfile: Dockerfile
+    image: homework
+    container_name: homework-php
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html:rw,cached
+      - ./docker/php/config/php.ini:/usr/local/etc/php/conf.d/php.ini:ro
+    links:
+      - db
+
+  #Nginx Service
+  nginx:
+    image: nginx:alpine
+    container_name: homework-nginx
+    restart: unless-stopped
+    ports:
+      - 8100:80
+    volumes:
+      - ./:/var/www/html:rw,cached
+      - ./docker/nginx:/etc/nginx/conf.d/:ro
+    links:
+      - php
+  #MySQL Service
+  db:
+    image: mysql:8.0
+    container_name: homework-db
+    restart: unless-stopped
+    command: [--default-authentication-plugin=mysql_native_password, --max-allowed-packet=10GB, --log_bin_trust_function_creators=1]
+    ports:
+      - '3383:3306'
+    environment:
+      MYSQL_DATABASE: homework
+      MYSQL_ROOT_PASSWORD: Ka3%u6Ae
+      MYSQL_USER: homework
+      MYSQL_PASSWORD: hA*+BEAe
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./docker/mysql:/docker-entrypoint-initdb.d:ro
+      - mysql-database:/var/lib/mysql
